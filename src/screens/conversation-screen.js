@@ -3,11 +3,15 @@
  */
 import React, { Component, View, Text, StyleSheet, Image, ListView, TextInput, Dimensions} from 'react-native';
 import Button from './../components/button/button';
-import { Actions } from 'react-native-router-flux'
+import { Actions } from 'react-native-router-flux';
+import KeyboardSpacer from 'react-native-keyboard-spacer';
+import { connect } from 'react-redux';
+import _ from 'lodash';
+import moment from 'moment';
+import { apiSendChat, newMesage } from './../actions/';
 
 
 const { width, height } = Dimensions.get('window');
-
 
 const styles = StyleSheet.create({
     container: {
@@ -106,82 +110,16 @@ const styles = StyleSheet.create({
     }
 });
 
-const username = 'bolajee';
+const username = 'ponty96';
 
-const chats = [
-    {
-        sender: "ponty96",
-        receiver: "bolajee",
-        convo_id: "bolajee_ponty96",
-        last_msg: "lorem ipsum lactum tactum",
-        time: "11:00pm",
-        sender_dp: "https://avatars3.githubusercontent.com/u/11190968?v=3&s=460",
-        receiver_dp: "https://www.gravatar.com/avatar/b0c68cd8ea105ef0e8fbe8f7e0fdbf5e?s=32&d=identicon&r=PG",
-        unread: true
-    },
-    {
-        sender: "walexy",
-        receiver: "bolajee",
-        convo_id: "bolajee_walexy",
-        last_msg: "lorem ipsum lactum tactum",
-        time: "11:00pm",
-        sender_dp: "https://www.gravatar.com/avatar/38e249098df3eeb83da393c1b2616a24?s=32&d=identicon&r=PG",
-        receiver_dp: "https://www.gravatar.com/avatar/b0c68cd8ea105ef0e8fbe8f7e0fdbf5e?s=32&d=identicon&r=PG",
-        unread: true
-    },
-    {
-        sender: "pon6",
-        receiver: "bolajee",
-        convo_id: "bolajee_pont6",
-        last_msg: "lorem ipsum lactum tactum",
-        time: "11:00pm",
-        sender_dp: "https://www.gravatar.com/avatar/b0c68cd8ea105ef0e8fbe8f7e0fdbf5e?s=32&d=identicon&r=PG",
-        receiver_dp: "https://www.gravatar.com/avatar/38e249098df3eeb83da393c1b2616a24?s=32&d=identicon&r=PG",
-        unread: true
-    },
-    {
-        sender: "ponty96",
-        receiver: "bolajee",
-        convo_id: "bolajee_ponty96",
-        last_msg: "lorem ipsum lactum tactum",
-        time: "11:00pm",
-        sender_dp: "https://avatars3.githubusercontent.com/u/11190968?v=3&s=460",
-        receiver_dp: "https://www.gravatar.com/avatar/b0c68cd8ea105ef0e8fbe8f7e0fdbf5e?s=32&d=identicon&r=PG",
-        unread: true
-    },
-    {
-        sender: "ponty96",
-        receiver: "bolajee",
-        convo_id: "bolajee_ponty96",
-        last_msg: "lorem ipsum lactum tactum",
-        time: "11:00pm",
-        sender_dp: "https://avatars3.githubusercontent.com/u/11190968?v=3&s=460",
-        receiver_dp: "https://www.gravatar.com/avatar/b0c68cd8ea105ef0e8fbe8f7e0fdbf5e?s=32&d=identicon&r=PG",
-        unread: true
-    },
-    {
-        sender: "bolajee",
-        receiver: "ponty96",
-        convo_id: "bolajee_ponty96",
-        last_msg: "lorem ipsum lactum tactum",
-        time: "11:00pm",
-        sender_dp: "https://avatars3.githubusercontent.com/u/11190968?v=3&s=460",
-        receiver_dp: "https://www.gravatar.com/avatar/b0c68cd8ea105ef0e8fbe8f7e0fdbf5e?s=32&d=identicon&r=PG",
-        unread: true
-    },
-    {
-        sender: "bolajee",
-        receiver: "ponty96",
-        convo_id: "bolajee_ponty96",
-        last_msg: "lorem ipsum lactum tactum",
-        time: "11:00pm",
-        sender_dp: "https://avatars3.githubusercontent.com/u/11190968?v=3&s=460",
-        receiver_dp: "https://www.gravatar.com/avatar/b0c68cd8ea105ef0e8fbe8f7e0fdbf5e?s=32&d=identicon&r=PG",
-        unread: true
+function mapStateToProps(state) {
+    return {
+        Chats: state.Chats,
+        dispatch: state.dispatch
     }
-];
+}
 
-export default class ConversationScreen extends Component {
+class ConversationScreen extends Component {
 
     constructor(props) {
         super(props);
@@ -192,22 +130,79 @@ export default class ConversationScreen extends Component {
         }
     }
 
-    componentWillMount() {
-        this.setState({
-            conversation: this.state.conversation.cloneWithRows(chats)
-        })
+    componentDidMount(){
+        const {dispatch, Chats} = this.props;
+        const process_status =  Chats.process_status;
+        const convo_id  = this.props.convo_id;
+
+        if(process_status === "completed"){
+            const convos = Chats.chats.filter((val) => {return val.convo_id == convo_id});
+
+            convos.sort((a,b)=>{
+                return moment(a.sent_at).valueOf() - moment(b.sent_at).valueOf();
+            });
+            this.setState({
+                conversation: this.state.conversation.cloneWithRows(convos)
+            })
+        }
+    }
+    componentWillReceiveProps(nextProps) {
+        const {dispatch, Chats} = nextProps;
+        const process_status =  Chats.process_status;
+        const convo_id  = this.props.convo_id;
+
+        if(process_status === "completed"){
+            const convos = Chats.chats.filter((val) => {return val.convo_id == convo_id})
+            convos.sort((a,b)=>{
+                return moment(a.sent_at).valueOf() - moment(b.sent_at).valueOf();
+            });
+            this.setState({
+                conversation: this.state.conversation.cloneWithRows(convos)
+            })
+        }
+
     }
 
+    renderSenderUserBlock(data){
+        return (
+            <View style={styles.messageBlockRight}>
+                <Text style={styles.textRight}>
+                    {data.message}
+                </Text>
+                <Text style={styles.timeRight}>{moment(data.time).calendar()}</Text>
+            </View>
+        )
+    }
+    renderReceiverUserBlock(data){
+        return (
+            <View style={styles.messageBlock}>
+                <Text style={styles.text}>
+                    {data.message}
+                </Text>
+                <Text style={styles.time}>{moment(data.time).calendar()}</Text>
+            </View>
+        )
+    }
     renderRow = (rowData) => {
         return (
             <View>
-
+                {rowData.sender == username ? this.renderSenderUserBlock(rowData) : this.renderReceiverUserBlock(rowData)}
             </View>
         )
     }
 
+    sendMessage = () => {
+        const convo_id  = this.props.convo_id;
+        const receiver = convo_id.substr(0, convo_id.indexOf(username));
+        const message = this.state.text;
+
+        const {dispatch, Chats} = this.props;
+        dispatch(apiSendChat(receiver,message))
+
+    }
+
     render() {
-        console.log(this.props);
+        const convo_id  = this.props.convo_id;
         return (
             <View style={styles.container}>
                 <View style={styles.row}>
@@ -218,80 +213,30 @@ export default class ConversationScreen extends Component {
                     </Button>
                     <View style={styles.innerRow}>
                         <Image source={{uri:"https://avatars3.githubusercontent.com/u/11190968?v=3&s=460"}} style={styles.dp}/>
-                        <Text style={styles.main_text}>{this.props.convo_id}</Text>
+                        <Text style={styles.main_text}>{ convo_id.substr(0, convo_id.indexOf(username)) }</Text>
                     </View>
                 </View>
 
-                <View style={styles.messageBlock}>
-                    <Text style={styles.text}>
-                        lorem ipsum lactum trtrtrtjkrtnjrtjknrtjkrtjkrnfddfdfdffdfddfdffdfdfdfdfdfdfd
-                    </Text>
-                    <Text style={styles.time}>11:53pm</Text>
-                </View>
-
-                <View style={styles.messageBlockRight}>
-                    <Text style={styles.textRight}>
-                        lorem ipsum lactum trtrtrtjkrtnjrtjknrtjkrtj
-                        dsdsdsdsdss
-                        dsds
-                        ds
-                        ds
-                        ds
-                        dsdsdskrnfddfdfdffdfddfdffdfdfdfdfdfdfd
-                    </Text>
-                    <Text style={styles.timeRight}>11:53pm</Text>
-                </View>
-                <View style={styles.messageBlock}>
-                    <Text style={styles.text}>
-                        lorem ipsum lactum trtrtrtjkrtnjrtjknrtjkrtjkrnfddfdfdffdfddfdffdfdfdfdfdfdfd
-                    </Text>
-                    <Text style={styles.time}>11:53pm</Text>
-                </View>
-
-                <View style={styles.messageBlockRight}>
-                    <Text style={styles.textRight}>
-                        lorem ipsum lactum trtrtrtjkrtnjrtjknrtjkrtj
-                        dsdsdsdsdss
-                        dsds
-                        ds
-                        ds
-                        ds
-                        dsdsdskrnfddfdfdffdfddfdffdfdfdfdfdfdfd
-                    </Text>
-                    <Text style={styles.timeRight}>11:53pm</Text>
-                </View>
-                <View style={styles.messageBlock}>
-                    <Text style={styles.text}>
-                        lorem ipsum lactum trtrtrtjkrtnjrtjknrtjkrtjkrnfddfdfdffdfddfdffdfdfdfdfdfdfd
-                    </Text>
-                    <Text style={styles.time}>11:53pm</Text>
-                </View>
-
-                <View style={styles.messageBlockRight}>
-                    <Text style={styles.textRight}>
-                        lorem ipsum lactum trtrtrtjkrtnjrtjknrtjkrtj
-                        dsdsdsdsdss
-                        dsds
-                        ds
-                        ds
-                        ds
-                        dsdsdskrnfddfdfdffdfddfdffdfdfdfdfdfdfd
-                    </Text>
-                    <Text style={styles.timeRight}>11:53pm</Text>
-                </View>
+                <ListView
+                    renderRow={this.renderRow}
+                    dataSource={this.state.conversation}/>
 
                 <View style={styles.input}>
                     <TextInput
                         style={styles.textInput}
                         onChangeText={(text) => this.setState({text:text})}
                         placeholder="Type a message"/>
-                    <Button>
+                    <Button
+                        onPress={this.sendMessage}>
                         <Image source={require('./../assets/phone.png')} style={styles.msgAction}/>
                     </Button>
                 </View>
+                <KeyboardSpacer/>
             </View>
         )
     }
 
 
 }
+
+export default connect(mapStateToProps)(ConversationScreen)
