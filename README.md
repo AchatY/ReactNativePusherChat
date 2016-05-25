@@ -5,9 +5,6 @@ platform that allows you to push messages to multiple listeners.
 Creating a Chat application based on this technology stack was cool and very exciting and I hope you gain as much experience
 and fun as I did after building this. 
 
-Its yet to be completed and will soon be but its a `very` minimalist chat application but I think with this you can get a bit
-of hint on how to build a real chat app
-
  **Coversations Screen:**
 
 ![Conversations Screen](https://cloud.githubusercontent.com/assets/11190968/15228519/71c95c3e-1884-11e6-8cee-22f174d303c1.png)
